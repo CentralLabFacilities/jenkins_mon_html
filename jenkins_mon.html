@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+body {
+  font: 10px sans-serif;
+    background-color: #6E7478;
+    color: #fff;
+}
+#chart div {
+    overflow-x: visible;
+    margin-bottom: 4px;
+    height: 20px;
+    white-space: nowrap;
+}
+#chart div.failure {
+    color: red;
+}
+div.health-0 {
+    background-color: rgba(255, 0, 0, 0.2);
+}
+div.health-10 {
+    background-color: rgba(255, 50, 0, 0.2);
+}
+div.health-20 {
+    background-color: rgba(255, 100, 0, 0.2);
+}
+div.health-30 {
+    background-color: rgba(255, 150, 0, 0.2);
+}
+div.health-40 {
+    background-color: rgba(255, 200, 0, 0.2);
+}
+div.health-50 {
+    background-color: rgba(255, 255, 0, 0.2);
+}
+div.health-60 {
+    background-color: rgba(200, 255, 0, 0.2);
+}
+div.health-70 {
+    background-color: rgba(150, 255, 0, 0.2);
+}
+div.health-80 {
+    background-color: rgba(100, 255, 0, 0.2);
+}
+div.health-90 {
+    background-color: rgba(50, 255, 0, 0.2);
+}
+div.health-100 {
+    background-color: rgba(0, 255, 0, 0.2);
+}
+</style>
+<body>
+<h1>Jenkins Monitor</h1>
+<div id="chart"></div>
+<!-- You need to disable browser security (CORS)
+OR add_header   Access-Control-Allow-Origin *; to the server's response
+OR host this file on the same server as your Jenkins -->
+<script>
+    var url = "https://ayq.csra.cit-ec.de"; // remove trailing slashes!
+    var viewName = "/view/TESTS"; //optional
+    var urlParam =
+        "/api/json?&tree=" +
+        "jobs[" +
+            "name," +
+            "lastBuild[" +
+                "number," +
+                "duration," +
+                "timestamp," +
+                "result" +
+            "]," +
+            "healthReport[" +
+                "score" +
+            "]" +
+        "]";
+    function loadJSON(callback) {
+        var xobj = new XMLHttpRequest();
+        xobj.overrideMimeType("application/json");
+        xobj.open('GET', url + viewName + urlParam, true);
+        xobj.onreadystatechange = function () {
+            if (xobj.readyState == 4 && xobj.status == "200") {
+                callback(xobj.responseText);
+            }
+        };
+      xobj.send(null);
+    }
+
+    function init() {
+        var chart = document.getElementById("chart");
+        while (chart.firstChild) {
+            chart.removeChild(chart.firstChild);
+        }
+        loadJSON(function(response) {
+            jsonAnswer = JSON.parse(response);
+            //console.log(jsonAnswer);
+            var docWidth = document.body.clientWidth - 16; // 16px margin right
+            var maxLen = 0;
+            for (i=0; i < jsonAnswer.jobs.length; i++) {
+                if (jsonAnswer.jobs[i].lastBuild && jsonAnswer.jobs[i].lastBuild.number > maxLen) {
+                    maxLen = jsonAnswer.jobs[i].lastBuild.number;
+                }
+            }
+            for (i=0; i < jsonAnswer.jobs.length; i++) {
+                var width = 0;
+                var chartDiv = document.createElement("div");
+                chartDiv.setAttribute("class", "");
+                if (jsonAnswer.jobs[i].lastBuild && jsonAnswer.jobs[i].lastBuild.result == "FAILURE") {
+                    chartDiv.setAttribute("class", chartDiv.getAttribute("class") + "failure ");
+                }
+                if (jsonAnswer.jobs[i].healthReport[0]){
+                    chartDiv.setAttribute("class", chartDiv.getAttribute("class") +
+                            "health-" + jsonAnswer.jobs[i].healthReport[0].score + " ");
+                }
+                if (jsonAnswer.jobs[i].lastBuild){
+                    width = docWidth / maxLen * (jsonAnswer.jobs[i].lastBuild.number) ;
+                }
+                chartDiv.setAttribute("style", "width: " + width + "px; ");
+                var node = document.createTextNode(jsonAnswer.jobs[i].name);
+                chartDiv.appendChild(node);
+                chart.appendChild(chartDiv);
+            }
+        });
+        //console.log("reloaded.")
+    }
+    init();
+    setInterval(function(){init()}, 30000);
+</script>
