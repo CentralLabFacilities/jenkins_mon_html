@@ -11,9 +11,10 @@ body {
     margin-bottom: 4px;
     height: 20px;
     white-space: nowrap;
+    text-shadow: 1px 1px 2px #0f0f0f;
 }
 #chart div.failure {
-    color: red;
+    color: rgba(255, 150, 150, 1);
 }
 div.health-0 {
     background-color: rgba(255, 0, 0, 0.2);
@@ -58,6 +59,8 @@ OR host this file on the same server as your Jenkins -->
 <script>
     var url = "https://ayq.csra.cit-ec.de"; // remove trailing slashes!
     var viewName = "/view/TESTS"; //optional
+    //var url = "https://iron:8080";
+    //var viewName = "";
     var urlParam =
         "/api/json?&tree=" +
         "jobs[" +
@@ -102,6 +105,7 @@ OR host this file on the same server as your Jenkins -->
             for (i=0; i < jsonAnswer.jobs.length; i++) {
                 var width = 0;
                 var chartDiv = document.createElement("div");
+                var buildNumber;
                 chartDiv.setAttribute("class", "");
                 if (jsonAnswer.jobs[i].lastBuild && jsonAnswer.jobs[i].lastBuild.result == "FAILURE") {
                     chartDiv.setAttribute("class", chartDiv.getAttribute("class") + "failure ");
@@ -111,11 +115,12 @@ OR host this file on the same server as your Jenkins -->
                             "health-" + jsonAnswer.jobs[i].healthReport[0].score + " ");
                 }
                 if (jsonAnswer.jobs[i].lastBuild){
-                    width = docWidth / maxLen * (jsonAnswer.jobs[i].lastBuild.number) ;
+                    buildNumber = jsonAnswer.jobs[i].lastBuild.number
+                    width = docWidth / maxLen * (buildNumber) ;
                 }
                 chartDiv.setAttribute("style", "width: " + width + "px; ");
-                var node = document.createTextNode(jsonAnswer.jobs[i].name);
-                chartDiv.appendChild(node);
+                var nameNode = document.createTextNode(jsonAnswer.jobs[i].name + " -- #" + buildNumber);
+                chartDiv.appendChild(nameNode);
                 chart.appendChild(chartDiv);
             }
         });
